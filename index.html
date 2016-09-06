@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+	body {
+		background-color: #cde7f0;
+	}
+
+	.subunit.USB {
+		fill: #cce5cc;
+	}
+
+	.subunit-boundary {
+		fill: none;
+		stroke: #aaa;
+		stroke-linejoin: round;
+	}
+
+	text {
+		font-family: helvetica;
+		font-size: 7pt;
+	}
+</style>
+
+<body>
+	<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="//d3js.org/topojson.v1.min.js"></script>
+	<script>
+		var width = window.innerWidth,
+			height = window.innerHeight;
+
+		var projection = d3.geo.albers()
+			// .center([35.3, -76.4])
+			// .parallels([50, 60])
+			.scale(1200)
+			.translate([width / 2, height / 2]);
+
+		var path = d3.geo.path()
+			.projection(projection);
+
+		var svg = d3.select("body").append("svg")
+			.attr("width", width)
+			.attr("height", height);
+
+		d3.json("maps/usa.json", function(error, usa) {
+			svg.selectAll(".subunit")
+				.data(topojson.feature(usa, usa.objects.subunits).features)
+				.enter().append("path")
+				.attr("class", function(d) {
+					return "subunit " + d.id;
+				})
+				.attr("d", path);
+
+			svg.append("path")
+				.datum(topojson.mesh(usa, usa.objects.subunits, function(a, b) {
+					return a === b && a.id === "USB";
+				}))
+				.attr("d", path)
+				.attr("class", "subunit-boundary USB");
+
+			svg.selectAll(".place-label")
+				.data(topojson.feature(usa, usa.objects.places).features)
+				.enter().append("text")
+				.attr("class", "place-label")
+				.attr("transform", function(d) {
+					return "translate(" + projection(d.geometry.coordinates) + ")";
+				})
+				.attr("dy", "0.35em")
+				.text(function(d) {
+					return d.properties.name;
+				});
+
+			svg.append("path")
+				.datum(topojson.feature(usa, usa.objects.places))
+				.attr("d", path.pointRadius(1.5))
+				.attr("class", "place");
+
+			svg.selectAll(".place-label")
+				.attr("x", function(d) {
+					return d.geometry.coordinates[0] > -1 ? 6 : -6;
+				})
+				.style("text-anchor", function(d) {
+					return d.geometry.coordinates[0] > -1 ? "start" : "end";
+				});
+		});
+	</script>
